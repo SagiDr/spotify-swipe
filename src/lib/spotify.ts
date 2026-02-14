@@ -33,41 +33,50 @@ export function formatTrack(track: SpotifyTrack): Track {
 }
 
 // Use Search API to get diverse songs since Recommendations API is deprecated
+// Mix of popular artist searches and genre queries for better quality results
 const ENGLISH_QUERIES = [
-  "genre:pop year:2023-2026",
-  "genre:rock year:2020-2026",
-  "genre:hip-hop year:2023-2026",
-  "genre:electronic year:2022-2026",
-  "genre:jazz year:2018-2026",
-  "genre:classical year:2015-2026",
-  "genre:r&b year:2023-2026",
-  "genre:country year:2022-2026",
-  "genre:latin year:2023-2026",
-  "genre:indie year:2022-2026",
-  "genre:metal year:2020-2026",
-  "genre:soul year:2020-2026",
-  "genre:funk year:2020-2026",
-  "genre:reggaeton year:2023-2026",
-  "genre:alternative year:2022-2026",
+  // Pop
+  "artist:Taylor Swift", "artist:Dua Lipa", "artist:The Weeknd", "artist:Billie Eilish",
+  "artist:Harry Styles", "artist:Olivia Rodrigo", "artist:Sabrina Carpenter", "artist:Chappell Roan",
+  // Hip-Hop / Rap
+  "artist:Drake", "artist:Kendrick Lamar", "artist:Travis Scott", "artist:21 Savage",
+  "artist:SZA", "artist:Tyler the Creator", "artist:Metro Boomin",
+  // Rock / Alternative
+  "artist:Arctic Monkeys", "artist:Tame Impala", "artist:Imagine Dragons", "artist:Hozier",
+  "artist:Radiohead", "artist:Foo Fighters",
+  // R&B / Soul
+  "artist:Frank Ocean", "artist:Daniel Caesar", "artist:Doja Cat", "artist:Beyonce",
+  // Electronic / Dance
+  "artist:Fred again", "artist:Calvin Harris", "artist:Disclosure",
+  // Latin
+  "artist:Bad Bunny", "artist:Peso Pluma", "artist:Karol G",
+  // Indie
+  "artist:Phoebe Bridgers", "artist:Mitski", "artist:Clairo", "artist:Mac DeMarco",
+  // Genre mix for variety
+  "top hits 2025", "viral hits 2024", "best new music 2025",
+  "genre:jazz year:2020-2026", "genre:country year:2023-2026",
+  "genre:classical year:2020-2026", "genre:metal year:2022-2026",
 ];
 
 const HEBREW_QUERIES = [
-  "שירים ישראליים חדשים",
-  "מוזיקה ישראלית",
-  "פופ ישראלי",
-  "רוק ישראלי",
-  "ראפ ישראלי",
-  "מזרחית חדשה",
-  "שירי אהבה בעברית",
-  "ישראלי חדש",
-  "היפ הופ ישראלי",
-  "אלקטרוניקה ישראלית",
-  "שירים בעברית",
+  // Popular Israeli artists
+  "artist:עידן רייכל", "artist:אריאל זילבר", "artist:שלמה ארצי",
+  "artist:עומר אדם", "artist:נועה קירל", "artist:אייל גולן",
+  "artist:סטטיק ובן אל תבורי", "artist:אגם בוחבוט", "artist:מרגול",
+  "artist:ישי ריבו", "artist:עדן חסון", "artist:נתן גושן",
+  "artist:אביב גפן", "artist:שרית חדד", "artist:אתניקס",
+  "artist:תומר יוסף", "artist:הדג נחש", "artist:בלקן ביט בוקס",
+  "artist:ריקלין", "artist:מוש בן ארי",
+  // Genre queries in Hebrew
+  "שירים ישראליים חדשים 2025",
   "להיטים ישראליים",
-  "מוזיקה מזרחית",
-  "אינדי ישראלי",
-  "שירים ישראליים 2024",
+  "מוזיקה מזרחית חדשה",
+  "ראפ ישראלי חדש",
+  "רוק ישראלי",
+  "פופ ישראלי 2024",
 ];
+
+const MIN_POPULARITY = 40; // Filter out obscure tracks
 
 function hasHebrew(text: string): boolean {
   return /[\u0590-\u05FF]/.test(text);
@@ -85,25 +94,23 @@ function shuffle<T>(array: T[]): T[] {
 export async function getDiverseSongs(token: string, language: string = "english", maxCount: number = 20): Promise<Track[]> {
   const tracks: Track[] = [];
   const seenIds = new Set<string>();
+  const seenArtists = new Set<string>();
   const isHebrew = language === "hebrew";
 
   const allQueries = isHebrew ? HEBREW_QUERIES : ENGLISH_QUERIES;
-  const queries = shuffle(allQueries);
-  // Fetch more per query for Hebrew since we filter out non-Hebrew tracks
-  const perQuery = isHebrew
-    ? Math.min(Math.ceil(maxCount / queries.length) * 3, 20)
-    : Math.ceil(maxCount / queries.length) + 2;
+  // Pick a random subset of queries so each session feels different
+  const queries = shuffle(allQueries).slice(0, Math.max(maxCount, 15));
 
   for (const query of queries) {
     if (tracks.length >= maxCount) break;
 
     try {
-      // Smaller offset for Hebrew (smaller catalog), wider for English
-      const offset = Math.floor(Math.random() * (isHebrew ? 50 : 900));
+      // Small random offset to get variety, but stay in the popular range
+      const offset = Math.floor(Math.random() * (isHebrew ? 20 : 50));
       const params = new URLSearchParams({
         q: query,
         type: "track",
-        limit: String(Math.min(perQuery, 20)),
+        limit: "10",
         offset: offset.toString(),
       });
       if (isHebrew) params.set("market", "IL");
@@ -114,6 +121,9 @@ export async function getDiverseSongs(token: string, language: string = "english
         for (const track of data.tracks.items as SpotifyTrack[]) {
           if (seenIds.has(track.id) || tracks.length >= maxCount) continue;
 
+          // Skip low-popularity tracks
+          if (track.popularity < MIN_POPULARITY) continue;
+
           // For Hebrew mode, only include tracks with Hebrew in the name or artist
           if (isHebrew) {
             const trackName = track.name;
@@ -121,44 +131,22 @@ export async function getDiverseSongs(token: string, language: string = "english
             if (!hasHebrew(trackName) && !hasHebrew(artistNames)) continue;
           }
 
+          // Limit to 2 songs per artist for diversity
+          const mainArtist = track.artists[0]?.name ?? "";
+          const artistCount = Array.from(seenArtists).filter((a) => a === mainArtist).length;
+          if (artistCount >= 2) continue;
+
           seenIds.add(track.id);
+          seenArtists.add(mainArtist);
           tracks.push(formatTrack(track));
         }
       }
     } catch (e) {
-      try {
-        const fallbackOffset = Math.floor(Math.random() * 20);
-        const params = new URLSearchParams({
-          q: query,
-          type: "track",
-          limit: String(Math.min(perQuery, 20)),
-          offset: fallbackOffset.toString(),
-        });
-        if (isHebrew) params.set("market", "IL");
-
-        const data = await spotifyFetch(`/search?${params}`, token);
-
-        if (data.tracks?.items) {
-          for (const track of data.tracks.items as SpotifyTrack[]) {
-            if (seenIds.has(track.id) || tracks.length >= maxCount) continue;
-
-            if (isHebrew) {
-              const trackName = track.name;
-              const artistNames = track.artists.map((a) => a.name).join(" ");
-              if (!hasHebrew(trackName) && !hasHebrew(artistNames)) continue;
-            }
-
-            seenIds.add(track.id);
-            tracks.push(formatTrack(track));
-          }
-        }
-      } catch (e2) {
-        console.error(`Failed to search for "${query}":`, e2);
-      }
+      console.error(`Failed to search for "${query}":`, e);
     }
   }
 
-  // Shuffle the final result so genres are mixed together
+  // Shuffle the final result so genres/artists are mixed together
   return shuffle(tracks);
 }
 
