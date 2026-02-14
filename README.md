@@ -1,30 +1,35 @@
 # Spotify Swipe
 
-A Tinder-style web app that lets you swipe through songs to discover your music taste, then generates a personalized Spotify playlist based on your likes.
+> Discover music you love — one swipe at a time.
 
-**Live demo:** [spotifyswipe.vercel.app](https://spotifyswipe.vercel.app)
+Spotify Swipe is a web application that reimagines music discovery through an intuitive swipe-based interface. Users are presented with a curated selection of songs and swipe to indicate their preferences. Based on those choices, the app generates a personalized Spotify playlist tailored to their taste.
 
-## How It Works
+**Live:** [spotifyswipe.vercel.app](https://spotifyswipe.vercel.app)
 
-1. **Log in** with your Spotify account
-2. **Choose** your language (English/Hebrew) and number of songs (10-35)
-3. **Swipe right** to like, **swipe left** to skip (or use the buttons)
-4. **Get a playlist** — a personalized Spotify playlist is created in your account based on the songs you liked
+---
 
-## Features
+## Overview
 
-- Swipe gestures with smooth animations
-- In-app song previews (Spotify embed player)
-- English and Hebrew song modes
-- Light and dark theme
-- Adjustable song count (10-35)
-- Playlist auto-created in your Spotify account
-- Only popular, diverse songs — 1 per artist, 1 per album
+1. Authenticate with your Spotify account
+2. Configure your session — select language and number of songs
+3. Swipe through songs — right to like, left to skip
+4. Receive a custom playlist — automatically saved to your Spotify library
 
-## Tech Stack
+## Key Features
 
-- **Next.js 14** (App Router)
-- **TypeScript**
-- **Tailwind CSS**
-- **Framer Motion**
-- **Spotify Web API**
+- **Swipe-based discovery** — fluid drag gestures with animated card transitions
+- **In-app previews** — listen to tracks directly within the app via Spotify's embedded player
+- **Multi-language support** — English and Hebrew song catalogs
+- **Theme options** — light and dark mode
+- **Curated selection** — songs are filtered by popularity with a maximum of one track per artist and per album to ensure variety
+- **Playlist generation** — recommendations are built from your liked songs and saved directly to your Spotify account
+
+## Built With
+
+| Technology | Purpose |
+|---|---|
+| **Next.js 14** | Full-stack React framework (App Router) |
+| **TypeScript** | Type-safe development |
+| **Tailwind CSS** | Utility-first styling |
+| **Framer Motion** | Gesture handling and animations |
+| **Spotify Web API** | Authentication, search, and playlist creation |
