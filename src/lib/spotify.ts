@@ -171,7 +171,7 @@ export async function getSearchBasedRecommendations(
   const seenIds = new Set<string>(likedTracks.map((t) => t.id));
 
   // Extract unique artists from liked tracks
-  const artists = [...new Set(likedTracks.map((t) => t.artist.split(", ")[0]))];
+  const artists = Array.from(new Set(likedTracks.map((t) => t.artist.split(", ")[0])));
 
   // Search for more tracks by liked artists
   for (const artist of artists.slice(0, 8)) {
