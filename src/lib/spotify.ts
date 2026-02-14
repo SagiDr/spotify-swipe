@@ -94,7 +94,8 @@ function shuffle<T>(array: T[]): T[] {
 export async function getDiverseSongs(token: string, language: string = "english", maxCount: number = 20): Promise<Track[]> {
   const tracks: Track[] = [];
   const seenIds = new Set<string>();
-  const seenArtists = new Set<string>();
+  const artistCounts = new Map<string, number>();
+  const seenAlbums = new Set<string>();
   const isHebrew = language === "hebrew";
 
   const allQueries = isHebrew ? HEBREW_QUERIES : ENGLISH_QUERIES;
@@ -118,8 +119,10 @@ export async function getDiverseSongs(token: string, language: string = "english
       const data = await spotifyFetch(`/search?${params}`, token);
 
       if (data.tracks?.items) {
+        // Only take 1 track per query to maximize diversity across artists
+        let addedFromQuery = false;
         for (const track of data.tracks.items as SpotifyTrack[]) {
-          if (seenIds.has(track.id) || tracks.length >= maxCount) continue;
+          if (addedFromQuery || seenIds.has(track.id) || tracks.length >= maxCount) continue;
 
           // Skip low-popularity tracks
           if (track.popularity < MIN_POPULARITY) continue;
@@ -131,14 +134,19 @@ export async function getDiverseSongs(token: string, language: string = "english
             if (!hasHebrew(trackName) && !hasHebrew(artistNames)) continue;
           }
 
-          // Limit to 2 songs per artist for diversity
+          // Max 1 song per artist
           const mainArtist = track.artists[0]?.name ?? "";
-          const artistCount = Array.from(seenArtists).filter((a) => a === mainArtist).length;
-          if (artistCount >= 2) continue;
+          if ((artistCounts.get(mainArtist) ?? 0) >= 1) continue;
+
+          // Max 1 song per album
+          const albumId = track.album.id;
+          if (seenAlbums.has(albumId)) continue;
 
           seenIds.add(track.id);
-          seenArtists.add(mainArtist);
+          seenAlbums.add(albumId);
+          artistCounts.set(mainArtist, (artistCounts.get(mainArtist) ?? 0) + 1);
           tracks.push(formatTrack(track));
+          addedFromQuery = true;
         }
       }
     } catch (e) {
