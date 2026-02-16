@@ -28,7 +28,7 @@ export default function Home() {
             Spotify Swipe
           </h1>
           <p className="text-gray-500 dark:text-gray-400 text-lg leading-relaxed">
-            Swipe through 20 songs, like or skip them, and we&apos;ll create a
+            Swipe through songs, like or skip them, and we&apos;ll create a
             personalized playlist that matches your taste.
           </p>
         </div>
