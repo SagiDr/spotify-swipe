@@ -52,7 +52,7 @@ export default function AudioPlayer({ previewUrl, trackId }: AudioPlayerProps) {
   // If preview_url exists, use native audio player
   if (previewUrl) {
     return (
-      <div className="mt-4 flex items-center gap-3">
+      <div className="mt-2 sm:mt-4 flex items-center gap-2 sm:gap-3">
         <audio
           ref={audioRef}
           src={previewUrl}
@@ -63,7 +63,7 @@ export default function AudioPlayer({ previewUrl, trackId }: AudioPlayerProps) {
         />
         <button
           onClick={togglePlay}
-          className="flex-shrink-0 w-12 h-12 rounded-full bg-spotify-green hover:bg-green-400 text-black flex items-center justify-center transition-colors shadow-lg"
+          className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-spotify-green hover:bg-green-400 text-black flex items-center justify-center transition-colors shadow-lg"
         >
           {isPlaying ? (
             <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
@@ -93,7 +93,7 @@ export default function AudioPlayer({ previewUrl, trackId }: AudioPlayerProps) {
 
   // No preview_url — use Spotify embed player
   return (
-    <div className="mt-4">
+    <div className="mt-2 sm:mt-4">
       {showEmbed ? (
         <iframe
           src={`https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0`}

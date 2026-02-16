@@ -42,7 +42,7 @@ export default function SwipeCard({ track, onSwipe, isTop }: SwipeCardProps) {
         transition: { duration: 0.3 },
       }}
     >
-      <div className="bg-white dark:bg-spotify-lightgray border border-gray-200 dark:border-transparent rounded-3xl overflow-hidden shadow-2xl mx-auto h-full flex flex-col">
+      <div className="bg-white dark:bg-spotify-lightgray border border-gray-200 dark:border-transparent rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl mx-auto h-full flex flex-col">
         {/* Album art */}
         <div className="relative w-full flex-1 min-h-0">
           {track.albumArt ? (
@@ -65,7 +65,7 @@ export default function SwipeCard({ track, onSwipe, isTop }: SwipeCardProps) {
           {/* LIKE overlay */}
           {isTop && (
             <motion.div
-              className="absolute top-8 left-8 border-4 border-spotify-green text-spotify-green text-5xl font-bold px-6 py-2 rounded-xl rotate-[-15deg] bg-black/30 backdrop-blur-sm"
+              className="absolute top-4 left-4 sm:top-8 sm:left-8 border-4 border-spotify-green text-spotify-green text-3xl sm:text-5xl font-bold px-4 py-1 sm:px-6 sm:py-2 rounded-xl rotate-[-15deg] bg-black/30 backdrop-blur-sm"
               style={{ opacity: likeOpacity }}
             >
               LIKE
@@ -75,7 +75,7 @@ export default function SwipeCard({ track, onSwipe, isTop }: SwipeCardProps) {
           {/* NOPE overlay */}
           {isTop && (
             <motion.div
-              className="absolute top-8 right-8 border-4 border-red-500 text-red-500 text-5xl font-bold px-6 py-2 rounded-xl rotate-[15deg] bg-black/30 backdrop-blur-sm"
+              className="absolute top-4 right-4 sm:top-8 sm:right-8 border-4 border-red-500 text-red-500 text-3xl sm:text-5xl font-bold px-4 py-1 sm:px-6 sm:py-2 rounded-xl rotate-[15deg] bg-black/30 backdrop-blur-sm"
               style={{ opacity: nopeOpacity }}
             >
               NOPE
@@ -84,11 +84,11 @@ export default function SwipeCard({ track, onSwipe, isTop }: SwipeCardProps) {
         </div>
 
         {/* Song info */}
-        <div className="px-5 py-3 shrink-0">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-tight line-clamp-1">
+        <div className="px-4 py-2 sm:px-7 sm:py-5 shrink-0">
+          <h2 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white leading-tight line-clamp-1">
             {track.name}
           </h2>
-          <p className="text-gray-500 dark:text-gray-400 mt-1 text-base leading-snug line-clamp-1">
+          <p className="text-gray-500 dark:text-gray-400 mt-0.5 sm:mt-1.5 text-sm sm:text-lg leading-snug line-clamp-1">
             {track.artist}
           </p>
           <AudioPlayer previewUrl={track.previewUrl} spotifyUrl={track.spotifyUrl} trackId={track.id} />
