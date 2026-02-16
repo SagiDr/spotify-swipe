@@ -69,6 +69,14 @@ export default function Home() {
           Login with Spotify
         </a>
 
+        {/* Trivia link */}
+        <a
+          href="/trivia"
+          className="inline-block w-full py-3 px-8 mt-3 bg-gray-200 dark:bg-spotify-lightgray hover:bg-gray-300 dark:hover:bg-gray-600 font-bold rounded-full text-sm transition-colors"
+        >
+          Play Music Trivia
+        </a>
+
         <p className="text-gray-400 dark:text-gray-600 text-xs mt-6">
           We only access your account to create playlists. Your data stays private.
         </p>

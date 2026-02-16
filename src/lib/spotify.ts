@@ -1,4 +1,4 @@
-import { SpotifyTrack, Track, SpotifyUser, SpotifyPlaylist } from "@/types";
+import { SpotifyTrack, Track, SpotifyUser, SpotifyPlaylist, PlaylistSummary } from "@/types";
 
 const SPOTIFY_API = "https://api.spotify.com/v1";
 
@@ -274,6 +274,43 @@ export async function createPlaylist(
       public: false,
     }),
   });
+}
+
+export async function getUserPlaylists(token: string): Promise<PlaylistSummary[]> {
+  const playlists: PlaylistSummary[] = [];
+  let url = "/me/playlists?limit=50";
+
+  while (url) {
+    const data = await spotifyFetch(url, token);
+    for (const item of data.items ?? []) {
+      playlists.push({
+        id: item.id,
+        name: item.name,
+        imageUrl: item.images?.[0]?.url ?? "",
+        trackCount: item.tracks?.total ?? 0,
+      });
+    }
+    url = data.next ? data.next.replace("https://api.spotify.com/v1", "") : "";
+  }
+
+  return playlists;
+}
+
+export async function getPlaylistTracks(token: string, playlistId: string): Promise<Track[]> {
+  const tracks: Track[] = [];
+  let url = `/playlists/${playlistId}/tracks?limit=100&fields=items(track(id,name,artists(id,name),album(id,name,images),preview_url,uri,popularity,external_urls)),next`;
+
+  while (url) {
+    const data = await spotifyFetch(url, token);
+    for (const item of data.items ?? []) {
+      if (item.track && item.track.id) {
+        tracks.push(formatTrack(item.track as SpotifyTrack));
+      }
+    }
+    url = data.next ? data.next.replace("https://api.spotify.com/v1", "") : "";
+  }
+
+  return tracks;
 }
 
 export async function addTracksToPlaylist(

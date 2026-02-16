@@ -70,3 +70,22 @@ export interface SpotifyUser {
   id: string;
   display_name: string;
 }
+
+export interface PlaylistSummary {
+  id: string;
+  name: string;
+  imageUrl: string;
+  trackCount: number;
+}
+
+export interface TriviaQuestion {
+  track: Track;
+  options: string[];
+  correctIndex: number;
+}
+
+export interface TriviaAnswer {
+  question: TriviaQuestion;
+  selectedIndex: number;
+  correct: boolean;
+}

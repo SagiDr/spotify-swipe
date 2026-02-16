@@ -32,6 +32,20 @@ export default function SettingsBar() {
 
   return (
     <div className="fixed top-2 right-2 sm:top-4 sm:right-4 flex items-center gap-1.5 sm:gap-3 z-50">
+      {/* Trivia link — only when logged in */}
+      {isLoggedIn && pathname !== "/trivia" && (
+        <button
+          onClick={() => router.push("/trivia")}
+          className="p-1.5 sm:px-3 sm:py-2 rounded-full text-sm font-medium bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 transition-colors"
+          aria-label="Music Trivia"
+          title="Music Trivia"
+        >
+          <svg className="w-4 h-4 sm:w-[18px] sm:h-[18px]" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" />
+          </svg>
+        </button>
+      )}
+
       {/* Logout button — only when logged in */}
       {isLoggedIn && (
         <button
