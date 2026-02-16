@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getValidAccessToken } from "@/lib/auth";
+import { getValidAccessToken, applyRefreshedCookie } from "@/lib/auth";
 import {
   getUserProfile,
   createPlaylist,
@@ -7,8 +7,8 @@ import {
 } from "@/lib/spotify";
 
 export async function POST(request: NextRequest) {
-  const token = await getValidAccessToken(request);
-  if (!token) {
+  const tokenResult = await getValidAccessToken(request);
+  if (!tokenResult) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const token = tokenResult.access_token;
     const user = await getUserProfile(token);
 
     const playlist = await createPlaylist(
@@ -33,11 +34,12 @@ export async function POST(request: NextRequest) {
 
     await addTracksToPlaylist(token, playlist.id, trackUris);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       playlistUrl: playlist.external_urls.spotify,
       playlistName: playlist.name,
       trackCount: trackUris.length,
     });
+    return applyRefreshedCookie(response, tokenResult);
   } catch (error) {
     console.error("Failed to create playlist:", error);
     return NextResponse.json(

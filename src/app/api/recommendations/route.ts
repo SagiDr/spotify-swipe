@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getValidAccessToken } from "@/lib/auth";
+import { getValidAccessToken, applyRefreshedCookie } from "@/lib/auth";
 import { getSearchBasedRecommendations } from "@/lib/spotify";
 import { Track } from "@/types";
 
 export async function POST(request: NextRequest) {
-  const token = await getValidAccessToken(request);
-  if (!token) {
+  const tokenResult = await getValidAccessToken(request);
+  if (!tokenResult) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
@@ -21,9 +21,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const recommendations = await getSearchBasedRecommendations(token, likedTracks);
+    const recommendations = await getSearchBasedRecommendations(tokenResult.access_token, likedTracks);
 
-    return NextResponse.json({ tracks: recommendations });
+    const response = NextResponse.json({ tracks: recommendations });
+    return applyRefreshedCookie(response, tokenResult);
   } catch (error) {
     console.error("Failed to get recommendations:", error);
     return NextResponse.json(

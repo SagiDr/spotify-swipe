@@ -17,23 +17,54 @@ export default function SwipePage() {
   const [started, setStarted] = useState(false);
 
   useEffect(() => {
-    async function fetchSongs() {
+    const controller = new AbortController();
+
+    async function fetchWithTimeout(url: string, timeoutMs: number) {
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
       try {
-        const res = await fetch(`/api/songs?language=${language}&count=35`);
-        if (res.status === 401) {
-          setError("Not logged in. Please log in with Spotify first.");
-          return;
-        }
-        if (!res.ok) throw new Error("Failed to fetch songs");
-        const data = await res.json();
-        setTracks(data.songs);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Something went wrong");
+        const res = await fetch(url, { signal: controller.signal });
+        return res;
       } finally {
-        setLoading(false);
+        clearTimeout(timeout);
       }
     }
-    fetchSongs();
+
+    async function fetchSongs(retries = 2) {
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          const res = await fetchWithTimeout(
+            `/api/songs?language=${language}&count=35`,
+            30000 // 30s total timeout for the whole request
+          );
+          if (res.status === 401) {
+            setError("Not logged in. Please log in with Spotify first.");
+            return;
+          }
+          if (!res.ok) throw new Error("Failed to fetch songs");
+          const data = await res.json();
+          if (!data.songs || data.songs.length === 0) {
+            throw new Error("No songs returned");
+          }
+          setTracks(data.songs);
+          return;
+        } catch (e) {
+          if (controller.signal.aborted) return; // component unmounted
+          if (attempt < retries) {
+            // Wait briefly before retrying
+            await new Promise((r) => setTimeout(r, 1000));
+            continue;
+          }
+          setError(e instanceof Error ? e.message : "Something went wrong");
+        }
+      }
+      setLoading(false);
+    }
+
+    fetchSongs().finally(() => {
+      if (!controller.signal.aborted) setLoading(false);
+    });
+
+    return () => controller.abort();
   }, [language]);
 
   const handleComplete = async (likedTrackIds: string[]) => {

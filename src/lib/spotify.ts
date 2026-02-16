@@ -3,21 +3,29 @@ import { SpotifyTrack, Track, SpotifyUser, SpotifyPlaylist } from "@/types";
 const SPOTIFY_API = "https://api.spotify.com/v1";
 
 async function spotifyFetch(endpoint: string, token: string, options?: RequestInit) {
-  const response = await fetch(`${SPOTIFY_API}${endpoint}`, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000); // 8s timeout per request
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Spotify API error: ${response.status} ${response.statusText} - ${text}`);
+  try {
+    const response = await fetch(`${SPOTIFY_API}${endpoint}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        ...options?.headers,
+      },
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Spotify API error: ${response.status} ${response.statusText} - ${text}`);
+    }
+
+    return response.json();
+  } finally {
+    clearTimeout(timeout);
   }
-
-  return response.json();
 }
 
 export function formatTrack(track: SpotifyTrack): Track {
@@ -102,22 +110,32 @@ export async function getDiverseSongs(token: string, language: string = "english
   // Pick a random subset of queries so each session feels different
   const queries = shuffle(allQueries).slice(0, Math.max(maxCount, 15));
 
-  for (const query of queries) {
+  // Process queries in parallel batches of 5 to avoid rate limiting while staying fast
+  const BATCH_SIZE = 5;
+  for (let i = 0; i < queries.length; i += BATCH_SIZE) {
     if (tracks.length >= maxCount) break;
 
-    try {
-      // Small random offset to get variety, but stay in the popular range
-      const offset = Math.floor(Math.random() * (isHebrew ? 20 : 50));
-      const params = new URLSearchParams({
-        q: query,
-        type: "track",
-        limit: "10",
-        offset: offset.toString(),
-      });
-      if (isHebrew) params.set("market", "IL");
+    const batch = queries.slice(i, i + BATCH_SIZE);
+    const results = await Promise.allSettled(
+      batch.map(async (query) => {
+        const offset = Math.floor(Math.random() * (isHebrew ? 20 : 50));
+        const params = new URLSearchParams({
+          q: query,
+          type: "track",
+          limit: "10",
+          offset: offset.toString(),
+        });
+        if (isHebrew) params.set("market", "IL");
 
-      const data = await spotifyFetch(`/search?${params}`, token);
+        return spotifyFetch(`/search?${params}`, token);
+      })
+    );
 
+    for (const result of results) {
+      if (tracks.length >= maxCount) break;
+      if (result.status !== "fulfilled") continue;
+
+      const data = result.value;
       if (data.tracks?.items) {
         // Only take 1 track per query to maximize diversity across artists
         let addedFromQuery = false;
@@ -149,8 +167,6 @@ export async function getDiverseSongs(token: string, language: string = "english
           addedFromQuery = true;
         }
       }
-    } catch (e) {
-      console.error(`Failed to search for "${query}":`, e);
     }
   }
 
