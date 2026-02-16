@@ -297,17 +297,31 @@ export async function getUserPlaylists(token: string): Promise<PlaylistSummary[]
 }
 
 export async function getPlaylistTracks(token: string, playlistId: string): Promise<Track[]> {
-  const tracks: Track[] = [];
-  let url = `/playlists/${playlistId}/tracks?limit=100&fields=items(track(id,name,artists(id,name),album(id,name,images),preview_url,uri,popularity,external_urls)),next`;
+  // Step 1: Get track IDs from the playlist
+  const trackIds: string[] = [];
+  let url = `/playlists/${playlistId}/tracks?limit=100&fields=items(track(id)),next`;
 
   while (url) {
     const data = await spotifyFetch(url, token);
     for (const item of data.items ?? []) {
-      if (item.track && item.track.id) {
-        tracks.push(formatTrack(item.track as SpotifyTrack));
+      if (item.track?.id) {
+        trackIds.push(item.track.id);
       }
     }
     url = data.next ? data.next.replace("https://api.spotify.com/v1", "") : "";
+  }
+
+  // Step 2: Batch-fetch full track details via /tracks endpoint
+  // This endpoint returns preview_url more reliably than the playlist tracks endpoint
+  const tracks: Track[] = [];
+  for (let i = 0; i < trackIds.length; i += 50) {
+    const batch = trackIds.slice(i, i + 50);
+    const data = await spotifyFetch(`/tracks?ids=${batch.join(",")}`, token);
+    for (const track of data.tracks ?? []) {
+      if (track && track.id) {
+        tracks.push(formatTrack(track as SpotifyTrack));
+      }
+    }
   }
 
   return tracks;
