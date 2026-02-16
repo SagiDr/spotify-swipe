@@ -8,7 +8,7 @@ interface ActionButtonsProps {
 
 export default function ActionButtons({ onDislike, onLike, disabled }: ActionButtonsProps) {
   return (
-    <div className="flex justify-center gap-8 mt-8">
+    <div className="flex justify-center gap-8 mt-3 shrink-0 pb-2">
       <button
         onClick={onDislike}
         disabled={disabled}

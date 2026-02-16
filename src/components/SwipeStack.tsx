@@ -41,23 +41,23 @@ export default function SwipeStack({ tracks, onComplete }: SwipeStackProps) {
   const progress = Math.min(currentIndex, tracks.length);
 
   return (
-    <div className="flex flex-col items-center w-full">
+    <div className="flex flex-col items-center w-full min-h-0 flex-1">
       {/* Progress bar */}
-      <div className="w-full max-w-xl mb-6 px-2">
-        <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400 mb-2">
+      <div className="w-full max-w-xl mb-3 px-2 shrink-0">
+        <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400 mb-1">
           <span>{progress} / {tracks.length}</span>
           <span>{likedIds.length} liked</span>
         </div>
-        <div className="w-full bg-gray-200 dark:bg-spotify-lightgray rounded-full h-2.5">
+        <div className="w-full bg-gray-200 dark:bg-spotify-lightgray rounded-full h-2">
           <div
-            className="bg-spotify-green h-2.5 rounded-full transition-all duration-300"
+            className="bg-spotify-green h-2 rounded-full transition-all duration-300"
             style={{ width: `${(progress / tracks.length) * 100}%` }}
           />
         </div>
       </div>
 
       {/* Card stack */}
-      <div className="relative w-full max-w-xl h-[720px]">
+      <div className="relative w-full max-w-xl flex-1 min-h-0">
         <AnimatePresence>
           {tracks.map((track, index) => {
             if (index < currentIndex || index > currentIndex + 1) return null;

@@ -204,8 +204,8 @@ export default function SwipePage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">
+    <main className="h-[100dvh] flex flex-col items-center justify-center px-4 py-4 overflow-hidden">
+      <h1 className="text-2xl font-bold mb-3 shrink-0">
         Swipe to discover your taste
       </h1>
       <SwipeStack tracks={tracks.slice(0, songCount)} onComplete={handleComplete} />

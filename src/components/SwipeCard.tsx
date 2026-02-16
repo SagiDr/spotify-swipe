@@ -28,7 +28,7 @@ export default function SwipeCard({ track, onSwipe, isTop }: SwipeCardProps) {
 
   return (
     <motion.div
-      className="absolute w-full"
+      className="absolute w-full h-full"
       style={{ x, rotate, zIndex: isTop ? 10 : 0 }}
       drag={isTop ? "x" : false}
       dragConstraints={{ left: 0, right: 0 }}
@@ -42,9 +42,9 @@ export default function SwipeCard({ track, onSwipe, isTop }: SwipeCardProps) {
         transition: { duration: 0.3 },
       }}
     >
-      <div className="bg-white dark:bg-spotify-lightgray border border-gray-200 dark:border-transparent rounded-3xl overflow-hidden shadow-2xl mx-auto">
+      <div className="bg-white dark:bg-spotify-lightgray border border-gray-200 dark:border-transparent rounded-3xl overflow-hidden shadow-2xl mx-auto h-full flex flex-col">
         {/* Album art */}
-        <div className="relative w-full" style={{ aspectRatio: "1 / 0.85" }}>
+        <div className="relative w-full flex-1 min-h-0">
           {track.albumArt ? (
             <Image
               src={track.albumArt}
@@ -84,11 +84,11 @@ export default function SwipeCard({ track, onSwipe, isTop }: SwipeCardProps) {
         </div>
 
         {/* Song info */}
-        <div className="px-7 py-5">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white leading-tight line-clamp-2">
+        <div className="px-5 py-3 shrink-0">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-tight line-clamp-1">
             {track.name}
           </h2>
-          <p className="text-gray-500 dark:text-gray-400 mt-1.5 text-lg leading-snug line-clamp-1">
+          <p className="text-gray-500 dark:text-gray-400 mt-1 text-base leading-snug line-clamp-1">
             {track.artist}
           </p>
           <AudioPlayer previewUrl={track.previewUrl} spotifyUrl={track.spotifyUrl} trackId={track.id} />
