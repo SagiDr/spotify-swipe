@@ -18,7 +18,9 @@ export default function SettingsBar() {
     await fetch("/api/auth/logout", { method: "POST" });
     document.cookie = "spotify_tokens=; path=/; max-age=0";
     setIsLoggedIn(false);
-    router.push("/");
+    // Redirect through Spotify's logout to clear their session,
+    // so next login shows a fresh login screen instead of auto-connecting
+    window.location.href = `https://accounts.spotify.com/logout?continue=${encodeURIComponent(window.location.origin)}`;
   };
 
   return (
