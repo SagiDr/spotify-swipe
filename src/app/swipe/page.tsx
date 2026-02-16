@@ -16,6 +16,20 @@ export default function SwipePage() {
   const [songCount, setSongCount] = useState(20);
   const [started, setStarted] = useState(false);
 
+  // Disable scrolling on the swipe page
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.width = "100%";
+    document.body.style.height = "100%";
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      document.body.style.height = "";
+    };
+  }, []);
+
   useEffect(() => {
     const controller = new AbortController();
 
