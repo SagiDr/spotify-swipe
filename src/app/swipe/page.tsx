@@ -204,7 +204,7 @@ export default function SwipePage() {
   }
 
   return (
-    <main className="h-[100dvh] flex flex-col items-center justify-center px-4 py-2 sm:py-6 overflow-hidden">
+    <main className="h-[100dvh] flex flex-col items-center px-4 pt-10 sm:pt-14 pb-2 sm:pb-6 overflow-hidden">
       <h1 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-4 shrink-0">
         Swipe to discover your taste
       </h1>
