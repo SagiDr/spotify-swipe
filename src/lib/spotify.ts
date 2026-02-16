@@ -146,10 +146,13 @@ export async function getDiverseSongs(token: string, language: string = "english
           if (track.popularity < MIN_POPULARITY) continue;
 
           // For Hebrew mode, only include tracks with Hebrew in the name or artist
+          // For English mode, reject tracks with Hebrew characters
+          const trackName = track.name;
+          const artistNames = track.artists.map((a) => a.name).join(" ");
           if (isHebrew) {
-            const trackName = track.name;
-            const artistNames = track.artists.map((a) => a.name).join(" ");
             if (!hasHebrew(trackName) && !hasHebrew(artistNames)) continue;
+          } else {
+            if (hasHebrew(trackName) || hasHebrew(artistNames)) continue;
           }
 
           // Max 1 song per artist
