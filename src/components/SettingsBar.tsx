@@ -18,9 +18,16 @@ export default function SettingsBar() {
     await fetch("/api/auth/logout", { method: "POST" });
     document.cookie = "spotify_tokens=; path=/; max-age=0";
     setIsLoggedIn(false);
-    // Redirect through Spotify's logout to clear their session,
-    // so next login shows a fresh login screen instead of auto-connecting
-    window.location.href = `https://accounts.spotify.com/logout?continue=${encodeURIComponent(window.location.origin)}`;
+    // Clear Spotify's session so next login allows account switching,
+    // then redirect back to our home page
+    const spotifyLogout = document.createElement("iframe");
+    spotifyLogout.style.display = "none";
+    spotifyLogout.src = "https://accounts.spotify.com/logout";
+    document.body.appendChild(spotifyLogout);
+    setTimeout(() => {
+      document.body.removeChild(spotifyLogout);
+      router.push("/");
+    }, 500);
   };
 
   return (
