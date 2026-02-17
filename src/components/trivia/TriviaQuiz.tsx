@@ -63,6 +63,19 @@ export default function TriviaQuiz({ questions, onFinish }: Props) {
     return () => stopAudio();
   }, [currentIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Preload next question's audio
+  useEffect(() => {
+    const next = questions[currentIndex + 1];
+    if (next?.track.previewUrl) {
+      const link = document.createElement("link");
+      link.rel = "prefetch";
+      link.as = "fetch";
+      link.href = next.track.previewUrl;
+      document.head.appendChild(link);
+      return () => { document.head.removeChild(link); };
+    }
+  }, [currentIndex, questions]);
+
   const handleAnswer = (index: number) => {
     if (selectedIndex !== null) return;
     setSelectedIndex(index);

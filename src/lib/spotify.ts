@@ -297,27 +297,35 @@ export async function getUserPlaylists(token: string): Promise<PlaylistSummary[]
 }
 
 async function scrapePreviewUrl(trackId: string): Promise<string | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 4000);
   try {
     const res = await fetch(`https://open.spotify.com/embed/track/${trackId}`, {
       headers: { "User-Agent": "Mozilla/5.0" },
+      signal: controller.signal,
     });
     if (!res.ok) return null;
     const html = await res.text();
-    // Extract audioPreview URL from the embedded __NEXT_DATA__ JSON
     const match = html.match(/"audioPreview":\s*\{\s*"url":\s*"([^"]+)"/);
     return match?.[1] ?? null;
   } catch {
     return null;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
-async function fillPreviewUrls(tracks: Track[]): Promise<Track[]> {
-  const missing = tracks.filter((t) => !t.previewUrl);
-  if (missing.length === 0) return tracks;
+async function fillPreviewUrls(tracks: Track[], minNeeded: number = 15): Promise<Track[]> {
+  const withPreview = tracks.filter((t) => t.previewUrl).length;
+  if (withPreview >= minNeeded) return tracks;
 
-  // Scrape in parallel batches of 10
-  const BATCH = 10;
+  const missing = tracks.filter((t) => !t.previewUrl);
+  let found = withPreview;
+
+  // Scrape in parallel batches of 20, stop early once we have enough
+  const BATCH = 20;
   for (let i = 0; i < missing.length; i += BATCH) {
+    if (found >= minNeeded) break;
     const batch = missing.slice(i, i + BATCH);
     const results = await Promise.allSettled(
       batch.map((t) => scrapePreviewUrl(t.id))
@@ -325,6 +333,7 @@ async function fillPreviewUrls(tracks: Track[]): Promise<Track[]> {
     results.forEach((r, idx) => {
       if (r.status === "fulfilled" && r.value) {
         batch[idx].previewUrl = r.value;
+        found++;
       }
     });
   }

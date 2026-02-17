@@ -39,6 +39,8 @@ export default function PlaylistSelector({ playlists, onSelect, loading }: Props
               <img
                 src={playlist.imageUrl}
                 alt={playlist.name}
+                loading="lazy"
+                decoding="async"
                 className="w-full aspect-square object-cover rounded-lg mb-2"
               />
             ) : (
