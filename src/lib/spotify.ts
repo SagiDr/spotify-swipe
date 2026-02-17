@@ -296,6 +296,36 @@ export async function getUserPlaylists(token: string): Promise<PlaylistSummary[]
   return playlists;
 }
 
+async function scrapePlaylistPreviews(playlistId: string): Promise<Map<string, string>> {
+  const previews = new Map<string, string>();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const res = await fetch(`https://open.spotify.com/embed/playlist/${playlistId}`, {
+      headers: { "User-Agent": "Mozilla/5.0" },
+      signal: controller.signal,
+    });
+    if (!res.ok) return previews;
+    const html = await res.text();
+    // Match all track audioPreview entries from the embed JSON
+    const regex = /"uid":"([^"]+)".*?"audioPreview":\s*\{\s*"url":\s*"([^"]+)"/g;
+    let match;
+    while ((match = regex.exec(html)) !== null) {
+      previews.set(match[1], match[2]);
+    }
+    // Also try matching by track URI pattern (spotify:track:ID -> preview URL)
+    const regex2 = /"uri":"spotify:track:([^"]+)"[^}]*?"audioPreview":\s*\{\s*"url":\s*"([^"]+)"/g;
+    while ((match = regex2.exec(html)) !== null) {
+      previews.set(match[1], match[2]);
+    }
+  } catch {
+    // Fallback to individual scraping
+  } finally {
+    clearTimeout(timeout);
+  }
+  return previews;
+}
+
 async function scrapePreviewUrl(trackId: string): Promise<string | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 4000);
@@ -315,14 +345,26 @@ async function scrapePreviewUrl(trackId: string): Promise<string | null> {
   }
 }
 
-async function fillPreviewUrls(tracks: Track[], minNeeded: number = 15): Promise<Track[]> {
+async function fillPreviewUrls(tracks: Track[], playlistId: string, minNeeded: number = 15): Promise<Track[]> {
   const withPreview = tracks.filter((t) => t.previewUrl).length;
   if (withPreview >= minNeeded) return tracks;
 
-  const missing = tracks.filter((t) => !t.previewUrl);
-  let found = withPreview;
+  // Step 1: Try bulk scrape from playlist embed page (single request)
+  const bulkPreviews = await scrapePlaylistPreviews(playlistId);
+  if (bulkPreviews.size > 0) {
+    for (const track of tracks) {
+      if (!track.previewUrl) {
+        const url = bulkPreviews.get(track.id);
+        if (url) track.previewUrl = url;
+      }
+    }
+  }
 
-  // Scrape in parallel batches of 20, stop early once we have enough
+  let found = tracks.filter((t) => t.previewUrl).length;
+  if (found >= minNeeded) return tracks;
+
+  // Step 2: Fall back to individual scraping for remaining tracks
+  const missing = tracks.filter((t) => !t.previewUrl);
   const BATCH = 20;
   for (let i = 0; i < missing.length; i += BATCH) {
     if (found >= minNeeded) break;
@@ -342,22 +384,17 @@ async function fillPreviewUrls(tracks: Track[], minNeeded: number = 15): Promise
 }
 
 export async function getPlaylistTracks(token: string, playlistId: string): Promise<Track[]> {
-  // Step 1: Fetch full track details from the playlist
+  // Only fetch first 100 tracks — enough for 10 trivia questions
+  const data = await spotifyFetch(`/playlists/${playlistId}/tracks?limit=100`, token);
   const tracks: Track[] = [];
-  let url = `/playlists/${playlistId}/tracks?limit=100`;
-
-  while (url) {
-    const data = await spotifyFetch(url, token);
-    for (const item of data.items ?? []) {
-      if (item.track && item.track.id) {
-        tracks.push(formatTrack(item.track as SpotifyTrack));
-      }
+  for (const item of data.items ?? []) {
+    if (item.track && item.track.id) {
+      tracks.push(formatTrack(item.track as SpotifyTrack));
     }
-    url = data.next ? data.next.replace("https://api.spotify.com/v1", "") : "";
   }
 
-  // Step 2: For tracks missing preview URLs, scrape from Spotify embed pages
-  return fillPreviewUrls(tracks);
+  // Fill missing preview URLs (bulk playlist embed first, then individual fallback)
+  return fillPreviewUrls(tracks, playlistId);
 }
 
 export async function addTracksToPlaylist(
