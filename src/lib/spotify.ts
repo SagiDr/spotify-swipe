@@ -296,35 +296,59 @@ export async function getUserPlaylists(token: string): Promise<PlaylistSummary[]
   return playlists;
 }
 
+async function scrapePreviewUrl(trackId: string): Promise<string | null> {
+  try {
+    const res = await fetch(`https://open.spotify.com/embed/track/${trackId}`, {
+      headers: { "User-Agent": "Mozilla/5.0" },
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    // Extract audioPreview URL from the embedded __NEXT_DATA__ JSON
+    const match = html.match(/"audioPreview":\s*\{\s*"url":\s*"([^"]+)"/);
+    return match?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function fillPreviewUrls(tracks: Track[]): Promise<Track[]> {
+  const missing = tracks.filter((t) => !t.previewUrl);
+  if (missing.length === 0) return tracks;
+
+  // Scrape in parallel batches of 10
+  const BATCH = 10;
+  for (let i = 0; i < missing.length; i += BATCH) {
+    const batch = missing.slice(i, i + BATCH);
+    const results = await Promise.allSettled(
+      batch.map((t) => scrapePreviewUrl(t.id))
+    );
+    results.forEach((r, idx) => {
+      if (r.status === "fulfilled" && r.value) {
+        batch[idx].previewUrl = r.value;
+      }
+    });
+  }
+
+  return tracks;
+}
+
 export async function getPlaylistTracks(token: string, playlistId: string): Promise<Track[]> {
-  // Step 1: Get track IDs from the playlist
-  const trackIds: string[] = [];
-  let url = `/playlists/${playlistId}/tracks?limit=100&fields=items(track(id)),next`;
+  // Step 1: Fetch full track details from the playlist
+  const tracks: Track[] = [];
+  let url = `/playlists/${playlistId}/tracks?limit=100`;
 
   while (url) {
     const data = await spotifyFetch(url, token);
     for (const item of data.items ?? []) {
-      if (item.track?.id) {
-        trackIds.push(item.track.id);
+      if (item.track && item.track.id) {
+        tracks.push(formatTrack(item.track as SpotifyTrack));
       }
     }
     url = data.next ? data.next.replace("https://api.spotify.com/v1", "") : "";
   }
 
-  // Step 2: Batch-fetch full track details via /tracks endpoint
-  // This endpoint returns preview_url more reliably than the playlist tracks endpoint
-  const tracks: Track[] = [];
-  for (let i = 0; i < trackIds.length; i += 50) {
-    const batch = trackIds.slice(i, i + 50);
-    const data = await spotifyFetch(`/tracks?ids=${batch.join(",")}`, token);
-    for (const track of data.tracks ?? []) {
-      if (track && track.id) {
-        tracks.push(formatTrack(track as SpotifyTrack));
-      }
-    }
-  }
-
-  return tracks;
+  // Step 2: For tracks missing preview URLs, scrape from Spotify embed pages
+  return fillPreviewUrls(tracks);
 }
 
 export async function addTracksToPlaylist(
