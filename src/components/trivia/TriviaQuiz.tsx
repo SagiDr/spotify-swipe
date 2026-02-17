@@ -14,6 +14,7 @@ export default function TriviaQuiz({ questions, onFinish }: Props) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [answers, setAnswers] = useState<TriviaAnswer[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [volume, setVolume] = useState(0.5);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const question = questions[currentIndex];
@@ -32,6 +33,7 @@ export default function TriviaQuiz({ questions, onFinish }: Props) {
     if (!question.track.previewUrl) return;
 
     const audio = new Audio(question.track.previewUrl);
+    audio.volume = volume;
     audioRef.current = audio;
 
     // Random start offset in the 30s preview (leave room for 3s clip)
@@ -55,7 +57,7 @@ export default function TriviaQuiz({ questions, onFinish }: Props) {
     audio.onended = () => {
       setIsPlaying(false);
     };
-  }, [question, stopAudio]);
+  }, [question, stopAudio, volume]);
 
   // Auto-play clip when question changes
   useEffect(() => {
@@ -75,6 +77,13 @@ export default function TriviaQuiz({ questions, onFinish }: Props) {
       return () => { document.head.removeChild(link); };
     }
   }, [currentIndex, questions]);
+
+  const handleVolumeChange = (newVolume: number) => {
+    setVolume(newVolume);
+    if (audioRef.current) {
+      audioRef.current.volume = newVolume;
+    }
+  };
 
   const handleAnswer = (index: number) => {
     if (selectedIndex !== null) return;
@@ -172,15 +181,35 @@ export default function TriviaQuiz({ questions, onFinish }: Props) {
         </motion.div>
       )}
 
-      {/* Replay button */}
+      {/* Replay button + Volume */}
       {selectedIndex === null && (
-        <button
-          onClick={playClip}
-          disabled={isPlaying}
-          className="mb-6 px-4 py-2 rounded-full bg-spotify-green text-black font-medium text-sm hover:bg-green-400 transition-colors disabled:opacity-50"
-        >
-          {isPlaying ? "Playing..." : "Replay Clip"}
-        </button>
+        <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={playClip}
+            disabled={isPlaying}
+            className="px-4 py-2 rounded-full bg-spotify-green text-black font-medium text-sm hover:bg-green-400 transition-colors disabled:opacity-50"
+          >
+            {isPlaying ? "Playing..." : "Replay Clip"}
+          </button>
+          <div className="flex items-center gap-1.5">
+            <svg className="w-4 h-4 text-gray-400 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+              {volume === 0 ? (
+                <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
+              ) : (
+                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+              )}
+            </svg>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={volume}
+              onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+              className="w-20 h-1.5 rounded-full appearance-none cursor-pointer accent-spotify-green bg-gray-300 dark:bg-gray-600"
+            />
+          </div>
+        </div>
       )}
 
       {/* Answer options */}
