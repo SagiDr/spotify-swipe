@@ -15,7 +15,9 @@ export default function TriviaQuiz({ questions, onFinish }: Props) {
   const [answers, setAnswers] = useState<TriviaAnswer[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.5);
+  const [playCount, setPlayCount] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const clipOffsetRef = useRef<number>(0);
 
   const question = questions[currentIndex];
 
@@ -28,7 +30,7 @@ export default function TriviaQuiz({ questions, onFinish }: Props) {
     setIsPlaying(false);
   }, []);
 
-  const playClip = useCallback(() => {
+  const playClip = useCallback((long: boolean = false) => {
     stopAudio();
     if (!question.track.previewUrl) return;
 
@@ -36,31 +38,33 @@ export default function TriviaQuiz({ questions, onFinish }: Props) {
     audio.volume = volume;
     audioRef.current = audio;
 
-    // Random start offset in the 30s preview (leave room for 3s clip)
-    const startOffset = Math.random() * 27;
+    const startOffset = long ? 0 : clipOffsetRef.current;
+    const duration = long ? 10000 : 3000;
 
     audio.currentTime = startOffset;
     audio.play().then(() => {
       setIsPlaying(true);
+      setPlayCount((c) => c + 1);
     }).catch(() => {
       setIsPlaying(false);
     });
 
-    // Stop after 3 seconds
     setTimeout(() => {
       if (audioRef.current === audio) {
         audio.pause();
         setIsPlaying(false);
       }
-    }, 3000);
+    }, duration);
 
     audio.onended = () => {
       setIsPlaying(false);
     };
   }, [question, stopAudio, volume]);
 
-  // Auto-play clip when question changes
+  // Pick a random offset once per question, auto-play
   useEffect(() => {
+    clipOffsetRef.current = Math.random() * 27;
+    setPlayCount(0);
     playClip();
     return () => stopAudio();
   }, [currentIndex]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -181,16 +185,25 @@ export default function TriviaQuiz({ questions, onFinish }: Props) {
         </motion.div>
       )}
 
-      {/* Replay button + Volume */}
+      {/* Replay button + Play Longer + Volume */}
       {selectedIndex === null && (
         <div className="flex items-center gap-3 mb-6">
           <button
-            onClick={playClip}
+            onClick={() => playClip(false)}
             disabled={isPlaying}
             className="px-4 py-2 rounded-full bg-spotify-green text-black font-medium text-sm hover:bg-green-400 transition-colors disabled:opacity-50"
           >
             {isPlaying ? "Playing..." : "Replay Clip"}
           </button>
+          {playCount >= 2 && (
+            <button
+              onClick={() => playClip(true)}
+              disabled={isPlaying}
+              className="px-4 py-2 rounded-full bg-gray-200 dark:bg-spotify-lightgray font-medium text-sm hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+            >
+              Play Longer
+            </button>
+          )}
           <div className="flex items-center gap-1.5">
             <svg className="w-4 h-4 text-gray-400 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
               {volume === 0 ? (
