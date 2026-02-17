@@ -68,25 +68,38 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Login button */}
-        <a
-          href="/api/auth/login"
-          className="inline-block w-full py-4 px-8 bg-spotify-green hover:bg-green-400 text-black font-bold rounded-full text-lg transition-colors"
-        >
-          Login with Spotify
-        </a>
-
-        {/* Trivia link — only when logged in */}
-        {isLoggedIn && (
+        {/* Logged out: Login button */}
+        {!isLoggedIn && (
           <a
-            href="/trivia"
-            className="flex items-center justify-center gap-2 w-full py-3.5 px-8 mt-3 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white font-bold rounded-full text-base transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
+            href="/api/auth/login"
+            className="inline-block w-full py-4 px-8 bg-spotify-green hover:bg-green-400 text-black font-bold rounded-full text-lg transition-colors"
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" />
-            </svg>
-            Music Trivia
+            Login with Spotify
           </a>
+        )}
+
+        {/* Logged in: Swipe + Trivia buttons */}
+        {isLoggedIn && (
+          <div className="w-full space-y-3">
+            <a
+              href="/swipe"
+              className="flex items-center justify-center gap-2 w-full py-4 px-8 bg-spotify-green hover:bg-green-400 text-black font-bold rounded-full text-lg transition-colors"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+              Start Swiping
+            </a>
+            <a
+              href="/trivia"
+              className="flex items-center justify-center gap-2 w-full py-3.5 px-8 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white font-bold rounded-full text-base transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z" />
+              </svg>
+              Music Trivia
+            </a>
+          </div>
         )}
 
         <p className="text-gray-400 dark:text-gray-600 text-xs mt-6">

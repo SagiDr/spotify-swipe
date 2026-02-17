@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
         <p>Logging in...</p>
         <script>
           document.cookie = "spotify_tokens=${cookieValue}; path=/; max-age=${60 * 60 * 24 * 30}; samesite=lax";
-          window.location.href = "/swipe";
+          window.location.href = "/";
         </script>
       </body>
     </html>
