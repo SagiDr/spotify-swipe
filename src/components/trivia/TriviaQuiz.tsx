@@ -17,8 +17,6 @@ export default function TriviaQuiz({ questions, onFinish }: Props) {
   const [volume, setVolume] = useState(0.5);
   const [playCount, setPlayCount] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const clipOffsetRef = useRef<number>(0);
-
   const question = questions[currentIndex];
 
   const stopAudio = useCallback(() => {
@@ -38,10 +36,9 @@ export default function TriviaQuiz({ questions, onFinish }: Props) {
     audio.volume = volume;
     audioRef.current = audio;
 
-    const startOffset = long ? 0 : clipOffsetRef.current;
     const duration = long ? 10000 : 3000;
 
-    audio.currentTime = startOffset;
+    audio.currentTime = 0;
     audio.play().then(() => {
       setIsPlaying(true);
       setPlayCount((c) => c + 1);
@@ -61,9 +58,8 @@ export default function TriviaQuiz({ questions, onFinish }: Props) {
     };
   }, [question, stopAudio, volume]);
 
-  // Pick a random offset once per question, auto-play
+  // Reset play count and auto-play on new question
   useEffect(() => {
-    clipOffsetRef.current = Math.random() * 27;
     setPlayCount(0);
     playClip();
     return () => stopAudio();
