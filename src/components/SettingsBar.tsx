@@ -26,7 +26,7 @@ export default function SettingsBar() {
     document.body.appendChild(spotifyLogout);
     setTimeout(() => {
       document.body.removeChild(spotifyLogout);
-      router.push("/");
+      window.location.href = "/";
     }, 500);
   };
 
