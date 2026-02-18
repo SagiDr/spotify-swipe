@@ -84,6 +84,4 @@ Every round is different — the game pulls tracks directly from your own playli
 
 <div align="center">
 
-Made with Spotify Web API
-
 </div>
