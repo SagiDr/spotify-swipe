@@ -2,46 +2,45 @@
 
 > Discover music you love — one swipe at a time.
 
-Spotify Swipe is a web application that reimagines music discovery through an intuitive swipe-based interface. Users are presented with a curated selection of songs and swipe to indicate their preferences. Based on those choices, the app generates a personalized Spotify playlist tailored to their taste.
+Spotify Swipe is a web app that combines music discovery with fun. Swipe through songs to build personalized playlists, or test your knowledge with a trivia game based on your own Spotify library.
 
 **Live:** [spotifyswipe.vercel.app](https://spotifyswipe.vercel.app)
 
 ---
 
-## Overview
+## Swipe Mode
 
-1. Authenticate with your Spotify account
-2. Configure your session — select language and number of songs
-3. Swipe through songs — right to like, left to skip
-4. Receive a custom playlist — automatically saved to your Spotify library
+Discover new music through an intuitive swipe interface.
 
-## Key Features
+1. Connect your Spotify account
+2. Choose your language and number of songs
+3. Swipe right to like, left to skip
+4. Get a custom playlist saved directly to your Spotify library
+
+Songs are curated from a wide range of genres and artists, filtered by popularity with a maximum of one track per artist and per album to keep things fresh.
+
+## Trivia Mode
+
+Think you know your playlists? Put it to the test.
+
+1. Pick any playlist from your Spotify library
+2. Listen to short audio clips from tracks in that playlist
+3. Guess the song from four multiple-choice options
+4. See your final score and play again with a different playlist
+
+The trivia game pulls tracks directly from your playlists, so every round is personal and different.
+
+---
+
+## Features
 
 - **Swipe-based discovery** — fluid drag gestures with animated card transitions
-- **In-app previews** — listen to tracks directly within the app via Spotify's embedded player
+- **Music trivia** — guess-the-song game with audio clips from your own playlists
+- **In-app previews** — listen to tracks directly within the app
 - **Multi-language support** — English and Hebrew song catalogs
-- **Theme options** — light and dark mode
-- **Curated selection** — songs are filtered by popularity with a maximum of one track per artist and per album to ensure variety
-- **Playlist generation** — recommendations are built from your liked songs and saved directly to your Spotify account
-
-## Spotify App Setup
-
-This app requires a Spotify Developer application. To allow other users to log in:
-
-1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-2. Create or select your app
-3. Set the redirect URI to `<your-domain>/api/auth/callback`
-4. **Development Mode** — by default, only the app owner can use the API. To allow others:
-   - **Add users manually**: Go to **Settings > User Management** and add their Spotify email (up to 25 users)
-   - **Request Extended Quota**: Submit a quota extension request to allow any Spotify user to connect
-
-### Required Environment Variables
-
-| Variable | Description |
-|---|---|
-| `SPOTIFY_CLIENT_ID` | Your Spotify app's Client ID |
-| `SPOTIFY_CLIENT_SECRET` | Your Spotify app's Client Secret |
-| `NEXTAUTH_URL` | Your app's base URL (e.g. `http://localhost:3000`) |
+- **Light and dark mode** — switch themes to match your preference
+- **Playlist generation** — recommendations built from your liked songs, saved to Spotify
+- **Score tracking** — see how well you know your music after each trivia round
 
 ## Built With
 
