@@ -87,7 +87,9 @@ export default function PlaylistSelector({ playlists, onSelect, loading, onLoadL
 
       {playlists.length === 0 && (
         <p className="text-center text-gray-500 dark:text-gray-400 mt-8">
-          No playlists from your account. Paste a public playlist link above to play.
+          No playlists found in your account. If you have playlists on Spotify, your account is
+          probably not approved for this app: log out and use &quot;Log in with your own Spotify
+          app&quot; on the home page. You can also paste a public playlist link above.
         </p>
       )}
     </div>

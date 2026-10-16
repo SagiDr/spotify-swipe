@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import OwnAppLogin from "@/components/OwnAppLogin";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -71,14 +72,7 @@ export default function Home() {
             Login with Spotify
           </a>
         )}
-        {!isLoggedIn && (
-          <a
-            href="/trivia"
-            className="block mt-3 text-sm text-gray-500 dark:text-gray-400 underline hover:text-spotify-green"
-          >
-            Or play trivia with any public playlist link (no login)
-          </a>
-        )}
+        {!isLoggedIn && <OwnAppLogin />}
 
         {/* Logged in: Swipe + Trivia buttons */}
         {isLoggedIn && (

@@ -34,7 +34,7 @@ export function formatTrack(track: SpotifyTrack): Track {
     name: track.name,
     artist: track.artists.map((a) => a.name).join(", "),
     albumArt: track.album.images[0]?.url ?? "",
-    previewUrl: track.preview_url,
+    previewUrl: track.preview_url ?? null,
     uri: track.uri,
     spotifyUrl: track.external_urls.spotify,
   };
@@ -143,7 +143,8 @@ export async function getDiverseSongs(token: string, language: string = "english
           if (addedFromQuery || seenIds.has(track.id) || tracks.length >= maxCount) continue;
 
           // Skip low-popularity tracks
-          if (track.popularity < MIN_POPULARITY) continue;
+          // (Client IDs created after February 2026 no longer receive popularity)
+          if (track.popularity !== undefined && track.popularity < MIN_POPULARITY) continue;
 
           // For Hebrew mode, only include tracks with Hebrew in the name or artist
           // For English mode, reject tracks with Hebrew characters
@@ -266,14 +267,13 @@ export async function createPlaylist(
   name: string,
   description: string
 ): Promise<SpotifyPlaylist> {
-  return spotifyFetch(`/users/${userId}/playlists`, token, {
-    method: "POST",
-    body: JSON.stringify({
-      name,
-      description,
-      public: false,
-    }),
-  });
+  const body = JSON.stringify({ name, description, public: false });
+  try {
+    // February 2026 replacement for POST /users/{id}/playlists
+    return await spotifyFetch("/me/playlists", token, { method: "POST", body });
+  } catch {
+    return spotifyFetch(`/users/${userId}/playlists`, token, { method: "POST", body });
+  }
 }
 
 export async function getUserPlaylists(token: string): Promise<PlaylistSummary[]> {
@@ -287,7 +287,8 @@ export async function getUserPlaylists(token: string): Promise<PlaylistSummary[]
         id: item.id,
         name: item.name,
         imageUrl: item.images?.[0]?.url ?? "",
-        trackCount: item.tracks?.total ?? 0,
+        // Renamed from "tracks" to "items" in the February 2026 API changes
+        trackCount: item.tracks?.total ?? item.items?.total ?? 0,
       });
     }
     url = data.next ? data.next.replace("https://api.spotify.com/v1", "") : "";
@@ -385,11 +386,19 @@ export async function fillPreviewUrls(tracks: Track[], playlistId: string, minNe
 
 export async function getPlaylistTracks(token: string, playlistId: string): Promise<Track[]> {
   // Only fetch first 100 tracks — enough for 10 trivia questions
-  const data = await spotifyFetch(`/playlists/${playlistId}/tracks?limit=100`, token);
+  let data;
+  try {
+    // February 2026 renamed /tracks to /items
+    data = await spotifyFetch(`/playlists/${playlistId}/items?limit=100`, token);
+  } catch {
+    data = await spotifyFetch(`/playlists/${playlistId}/tracks?limit=100`, token);
+  }
   const tracks: Track[] = [];
-  for (const item of data.items ?? []) {
-    if (item.track && item.track.id) {
-      tracks.push(formatTrack(item.track as SpotifyTrack));
+  for (const entry of data.items ?? []) {
+    // February 2026 renamed the playlist item field from "track" to "item"
+    const track = entry.track ?? entry.item;
+    if (track && track.id && track.type !== "episode") {
+      tracks.push(formatTrack(track as SpotifyTrack));
     }
   }
 
@@ -494,8 +503,10 @@ export async function addTracksToPlaylist(
   playlistId: string,
   trackUris: string[]
 ): Promise<void> {
-  await spotifyFetch(`/playlists/${playlistId}/tracks`, token, {
-    method: "POST",
-    body: JSON.stringify({ uris: trackUris }),
-  });
+  const body = JSON.stringify({ uris: trackUris });
+  try {
+    await spotifyFetch(`/playlists/${playlistId}/items`, token, { method: "POST", body });
+  } catch {
+    await spotifyFetch(`/playlists/${playlistId}/tracks`, token, { method: "POST", body });
+  }
 }

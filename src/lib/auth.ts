@@ -37,17 +37,21 @@ export async function getValidAccessToken(request: NextRequest): Promise<TokenRe
 
   // Token expired, try to refresh
   try {
+    // PKCE tokens (user's own Client ID) refresh without a client secret
     const response = await fetch("https://accounts.spotify.com/api/token", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization: `Basic ${Buffer.from(
-          `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
-        ).toString("base64")}`,
-      },
+      headers: tokens.client_id
+        ? { "Content-Type": "application/x-www-form-urlencoded" }
+        : {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Authorization: `Basic ${Buffer.from(
+              `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
+            ).toString("base64")}`,
+          },
       body: new URLSearchParams({
         grant_type: "refresh_token",
         refresh_token: tokens.refresh_token,
+        ...(tokens.client_id ? { client_id: tokens.client_id } : {}),
       }),
     });
 
@@ -58,6 +62,7 @@ export async function getValidAccessToken(request: NextRequest): Promise<TokenRe
       access_token: data.access_token,
       refresh_token: data.refresh_token || tokens.refresh_token,
       expires_at: Date.now() + data.expires_in * 1000,
+      ...(tokens.client_id ? { client_id: tokens.client_id } : {}),
     };
     return { access_token: data.access_token, refreshed_tokens: newTokens };
   } catch {

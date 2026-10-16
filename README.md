@@ -62,11 +62,15 @@ Every round is different — the game pulls tracks directly from your own playli
 
 > **Spotify apps in Development Mode only allow pre-approved users.**
 >
-> Logging in only works for accounts on the app's allowlist (up to **5 users**, managed in the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) under **Settings > User Management**). Since February 2026, Development Mode apps can also only read tracks from playlists the user owns or collaborates on.
+> Since February 2026 Spotify limits a Development Mode app to **5 allowlisted users** (managed in the [Developer Dashboard](https://developer.spotify.com/dashboard) under **Settings > User Management**), and the app owner must have Premium. Accounts outside the allowlist get **0 playlists and 0 songs** on login.
 >
-> **Workaround for Trivia:** anyone can paste a link to any **public** playlist and play without logging in. The app reads the playlist from Spotify's public embed page (`open.spotify.com/embed/playlist/...`) instead of the Web API. When a logged-in Web API request fails, the app falls back to the same embed page. This is unofficial and undocumented: it returns at most ~100 tracks and may break if Spotify changes the embed page.
+> **This app offers two ways around that:**
 >
-> Swipe mode still needs a login, because saving a playlist requires an authorized Web API call.
+> 1. **Log in with your own Spotify app** (home page link). Any user creates a free Spotify developer app, adds this site's redirect URI, and pastes its **Client ID**. The app then logs them in through *their* app using Authorization Code + PKCE (no client secret), so our allowlist doesn't apply. This works for both Swipe and Trivia. The user's app owner needs Premium.
+>
+> 2. **Public-playlist Trivia with no login.** Paste a link to any public playlist; the app reads it from Spotify's public embed page (`open.spotify.com/embed/playlist/...`) instead of the Web API. Unofficial and undocumented: at most ~100 tracks, and it may break if Spotify changes the embed page.
+>
+> The code also tolerates the February 2026 Web API changes (`/playlists/{id}/tracks` -> `/items`, `POST /me/playlists`, renamed item fields, removed `popularity`), falling back to the old shapes for apps not yet migrated.
 
 ---
 

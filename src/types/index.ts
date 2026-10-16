@@ -20,9 +20,9 @@ export interface SpotifyTrack {
   name: string;
   artists: SpotifyArtist[];
   album: SpotifyAlbum;
-  preview_url: string | null;
+  preview_url?: string | null;
   uri: string;
-  popularity: number;
+  popularity?: number;
   external_urls: {
     spotify: string;
   };
@@ -51,6 +51,7 @@ export interface SpotifyTokens {
   access_token: string;
   refresh_token: string;
   expires_at: number;
+  client_id?: string; // Set when the user logged in with their own Client ID (PKCE)
 }
 
 export interface SwipeDecision {
