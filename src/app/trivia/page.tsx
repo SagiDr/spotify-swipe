@@ -68,10 +68,8 @@ export default function TriviaPage() {
     async function fetchPlaylists() {
       try {
         const res = await fetch("/api/trivia/playlists");
-        if (res.status === 401) {
-          router.push("/");
-          return;
-        }
+        // Not logged in: the user can still paste a public playlist link
+        if (res.status === 401) return;
         const data = await res.json();
         setPlaylists(data.playlists ?? []);
       } catch {
@@ -81,7 +79,7 @@ export default function TriviaPage() {
       }
     }
     fetchPlaylists();
-  }, [router]);
+  }, []);
 
   const startQuiz = useCallback(async (playlist: PlaylistSummary, cachedTracks?: Track[]) => {
     setSelectedPlaylist(playlist);
@@ -121,6 +119,22 @@ export default function TriviaPage() {
       setLoadingTracks(false);
     }
   }, []);
+
+  const loadFromLink = useCallback(async (link: string) => {
+    setLoadingTracks(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/trivia/public?playlist=${encodeURIComponent(link)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to load playlist");
+      setAllTracks(data.tracks ?? []);
+      await startQuiz(data.playlist as PlaylistSummary, data.tracks ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load playlist");
+      setPhase("select");
+      setLoadingTracks(false);
+    }
+  }, [startQuiz]);
 
   const handleFinish = (ans: TriviaAnswer[]) => {
     setAnswers(ans);
@@ -189,6 +203,7 @@ export default function TriviaPage() {
           playlists={playlists}
           onSelect={startQuiz}
           loading={loadingPlaylists}
+          onLoadLink={loadFromLink}
         />
       )}
 

@@ -345,7 +345,7 @@ async function scrapePreviewUrl(trackId: string): Promise<string | null> {
   }
 }
 
-async function fillPreviewUrls(tracks: Track[], playlistId: string, minNeeded: number = 15): Promise<Track[]> {
+export async function fillPreviewUrls(tracks: Track[], playlistId: string, minNeeded: number = 15): Promise<Track[]> {
   const withPreview = tracks.filter((t) => t.previewUrl).length;
   if (withPreview >= minNeeded) return tracks;
 
@@ -395,6 +395,98 @@ export async function getPlaylistTracks(token: string, playlistId: string): Prom
 
   // Fill missing preview URLs (bulk playlist embed first, then individual fallback)
   return fillPreviewUrls(tracks, playlistId);
+}
+
+/** Extract a playlist ID from a raw ID, an open.spotify.com URL or a spotify:playlist: URI */
+export function parsePlaylistId(input: string): string | null {
+  const trimmed = input.trim();
+  const match =
+    trimmed.match(/playlist[/:]([A-Za-z0-9]{22})/) ?? trimmed.match(/^([A-Za-z0-9]{22})$/);
+  return match?.[1] ?? null;
+}
+
+// Depth-first search for the first object that owns a "trackList" array
+function findTrackListOwner(node: unknown, depth = 0): Record<string, unknown> | null {
+  if (!node || typeof node !== "object" || depth > 10) return null;
+  const obj = node as Record<string, unknown>;
+  if (Array.isArray(obj.trackList)) return obj;
+  for (const value of Object.values(obj)) {
+    const found = findTrackListOwner(value, depth + 1);
+    if (found) return found;
+  }
+  return null;
+}
+
+function pickEmbedImage(entity: Record<string, unknown>): string {
+  const visual = entity.visualIdentity as { image?: { url: string; maxWidth?: number }[] } | undefined;
+  const images = visual?.image ?? [];
+  if (images.length > 0) {
+    return [...images].sort((a, b) => (b.maxWidth ?? 0) - (a.maxWidth ?? 0))[0].url;
+  }
+  const cover = entity.coverArt as { sources?: { url: string }[] } | undefined;
+  return cover?.sources?.[0]?.url ?? "";
+}
+
+export interface EmbedPlaylist {
+  summary: PlaylistSummary;
+  tracks: Track[];
+}
+
+/**
+ * Unofficial: read a public playlist from the open.spotify.com embed page.
+ * Needs no access token, so it is not subject to Development Mode user limits,
+ * but it only works for public playlists, returns at most ~100 tracks and may
+ * break whenever Spotify changes the embed page markup.
+ */
+export async function getPlaylistFromEmbed(playlistId: string): Promise<EmbedPlaylist> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  let html: string;
+  try {
+    const res = await fetch(`https://open.spotify.com/embed/playlist/${playlistId}`, {
+      headers: { "User-Agent": "Mozilla/5.0", "Accept-Language": "en" },
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`Embed page error: ${res.status}`);
+    html = await res.text();
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  const script = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+  if (!script) throw new Error("Embed page missing __NEXT_DATA__");
+
+  const entity = findTrackListOwner(JSON.parse(script[1]));
+  if (!entity) throw new Error("Embed page has no track list (private or empty playlist?)");
+
+  const coverUrl = pickEmbedImage(entity);
+  const tracks: Track[] = [];
+  for (const raw of entity.trackList as Record<string, unknown>[]) {
+    const uri = typeof raw.uri === "string" ? raw.uri : "";
+    const id = uri.startsWith("spotify:track:") ? uri.slice("spotify:track:".length) : "";
+    const name = (raw.title ?? raw.name) as string | undefined;
+    if (!id || !name) continue;
+    const preview = raw.audioPreview as { url?: string } | undefined;
+    tracks.push({
+      id,
+      name,
+      artist: typeof raw.subtitle === "string" ? raw.subtitle.replace(/ /g, " ") : "",
+      albumArt: coverUrl,
+      previewUrl: preview?.url ?? null,
+      uri,
+      spotifyUrl: `https://open.spotify.com/track/${id}`,
+    });
+  }
+
+  return {
+    summary: {
+      id: playlistId,
+      name: (entity.name ?? entity.title ?? "Playlist") as string,
+      imageUrl: coverUrl,
+      trackCount: tracks.length,
+    },
+    tracks,
+  };
 }
 
 export async function addTracksToPlaylist(

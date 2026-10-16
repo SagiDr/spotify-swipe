@@ -62,11 +62,11 @@ Every round is different — the game pulls tracks directly from your own playli
 
 > **Spotify apps in Development Mode only allow pre-approved users.**
 >
-> This means that if you try to log in with your Spotify account and you haven't been added to the app's allowlist, you will get **0 playlists and 0 songs**.
+> Logging in only works for accounts on the app's allowlist (up to **5 users**, managed in the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) under **Settings > User Management**). Since February 2026, Development Mode apps can also only read tracks from playlists the user owns or collaborates on.
 >
-> For now, users need to be **manually added** via the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) under **Settings > User Management** (up to 25 users).
+> **Workaround for Trivia:** anyone can paste a link to any **public** playlist and play without logging in. The app reads the playlist from Spotify's public embed page (`open.spotify.com/embed/playlist/...`) instead of the Web API. When a logged-in Web API request fails, the app falls back to the same embed page. This is unofficial and undocumented: it returns at most ~100 tracks and may break if Spotify changes the embed page.
 >
-> This will be resolved once the app is approved for Extended Quota Mode.
+> Swipe mode still needs a login, because saving a playlist requires an authorized Web API call.
 
 ---
 

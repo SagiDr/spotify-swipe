@@ -2,14 +2,18 @@
 
 import { PlaylistSummary } from "@/types";
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 interface Props {
   playlists: PlaylistSummary[];
   onSelect: (playlist: PlaylistSummary) => void;
   loading: boolean;
+  onLoadLink: (link: string) => void;
 }
 
-export default function PlaylistSelector({ playlists, onSelect, loading }: Props) {
+export default function PlaylistSelector({ playlists, onSelect, loading, onLoadLink }: Props) {
+  const [link, setLink] = useState("");
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -24,6 +28,29 @@ export default function PlaylistSelector({ playlists, onSelect, loading }: Props
       <p className="text-gray-500 dark:text-gray-400 text-sm text-center mb-6">
         Choose a playlist to test your music knowledge
       </p>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (link.trim()) onLoadLink(link.trim());
+        }}
+        className="flex gap-2 mb-6"
+      >
+        <input
+          type="text"
+          value={link}
+          onChange={(e) => setLink(e.target.value)}
+          placeholder="Paste any public Spotify playlist link"
+          className="flex-1 min-w-0 px-4 py-2.5 rounded-full bg-gray-100 dark:bg-spotify-lightgray text-sm outline-none focus:ring-2 focus:ring-spotify-green"
+        />
+        <button
+          type="submit"
+          disabled={!link.trim()}
+          className="px-5 py-2.5 rounded-full bg-spotify-green hover:bg-green-400 text-black font-bold text-sm disabled:opacity-50 transition-colors"
+        >
+          Play
+        </button>
+      </form>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {playlists.map((playlist, i) => (
@@ -60,7 +87,7 @@ export default function PlaylistSelector({ playlists, onSelect, loading }: Props
 
       {playlists.length === 0 && (
         <p className="text-center text-gray-500 dark:text-gray-400 mt-8">
-          No playlists found with 4+ tracks. Create some playlists on Spotify first!
+          No playlists from your account. Paste a public playlist link above to play.
         </p>
       )}
     </div>
